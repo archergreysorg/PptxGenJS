@@ -862,6 +862,34 @@ function genXmlParagraphProperties (textObj: ISlideObject | TextProps, isDefault
 			}
 		}
 
+		if (textObj.options.fontAlign) {
+			// auto (when the text flow is horizontal, this is the same as base below)
+			// b (the very bottom of a line, which may be different than base because of letters such as g, q, and y, which hang below the baseline)
+			// base (the baseline--the default)
+			// ctr (centered)
+			// t (top)
+			switch (textObj.options.fontAlign) {
+				case 'auto':
+					paragraphPropXml += ' fontAlgn="auto"'
+					break;
+				case 'base':
+					paragraphPropXml += ' fontAlgn="base"'
+					break;
+				case 'bottom':
+					paragraphPropXml += ' fontAlgn="b"'
+					break;
+				case 'center':
+					paragraphPropXml += ' fontAlgn="ctr"'
+					break;
+				case 'top':
+					paragraphPropXml += ' fontAlgn="t"'
+					break;
+				default:
+					paragraphPropXml += ''
+					break;
+			}
+		}
+
 		if (textObj.options.lineSpacing) {
 			strXmlLnSpc = `<a:lnSpc><a:spcPts val="${Math.round(textObj.options.lineSpacing * 100)}"/></a:lnSpc>`
 		} else if (textObj.options.lineSpacingMultiple) {
