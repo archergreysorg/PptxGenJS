@@ -1,6 +1,6 @@
 {
-  "name": "pptxgenjs",
-  "version": "3.13.0",
+  "name": "@contrail/pptxgenjs",
+  "version": "3.13.2",
   "author": {
     "name": "Brent Ely",
     "url": "https://github.com/gitbrent/"
