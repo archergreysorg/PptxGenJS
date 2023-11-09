@@ -1,4 +1,4 @@
-/* PptxGenJS 3.13.0-beta.0 @ 2023-05-17T03:15:58.384Z */
+/* PptxGenJS 3.13.2 @ 2023-11-09T15:55:38.797Z */
 'use strict';
 
 var JSZip = require('jszip');
@@ -5821,6 +5821,33 @@ function genXmlParagraphProperties(textObj, isDefault) {
                     break;
             }
         }
+        if (textObj.options.fontAlign) {
+            // auto (when the text flow is horizontal, this is the same as base below)
+            // b (the very bottom of a line, which may be different than base because of letters such as g, q, and y, which hang below the baseline)
+            // base (the baseline--the default)
+            // ctr (centered)
+            // t (top)
+            switch (textObj.options.fontAlign) {
+                case 'auto':
+                    paragraphPropXml += ' fontAlgn="auto"';
+                    break;
+                case 'base':
+                    paragraphPropXml += ' fontAlgn="base"';
+                    break;
+                case 'bottom':
+                    paragraphPropXml += ' fontAlgn="b"';
+                    break;
+                case 'center':
+                    paragraphPropXml += ' fontAlgn="ctr"';
+                    break;
+                case 'top':
+                    paragraphPropXml += ' fontAlgn="t"';
+                    break;
+                default:
+                    paragraphPropXml += '';
+                    break;
+            }
+        }
         if (textObj.options.lineSpacing) {
             strXmlLnSpc = "<a:lnSpc><a:spcPts val=\"".concat(Math.round(textObj.options.lineSpacing * 100), "\"/></a:lnSpc>");
         }
@@ -6713,7 +6740,7 @@ function makeXmlViewProps() {
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  *  SOFTWARE.
  */
-var VERSION = '3.13.0-beta.0-20230416-2140';
+var VERSION = '3.13.2';
 var PptxGenJS = /** @class */ (function () {
     function PptxGenJS() {
         var _this = this;

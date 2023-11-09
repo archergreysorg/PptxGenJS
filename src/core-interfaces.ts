@@ -88,6 +88,7 @@ export type Color = HexColor | ThemeColor
 export type Margin = number | [number, number, number, number]
 export type HAlign = 'left' | 'center' | 'right' | 'justify'
 export type VAlign = 'top' | 'middle' | 'bottom'
+export type FontAlign = 'auto' | 'bottom' | 'base' | 'center' | 'top'
 
 // used by charts, shape, text
 export interface BorderProps {
@@ -352,6 +353,13 @@ export interface TextBaseProps {
 	 * @example pptx.SchemeColor.text1 // Theme color (Text1)
 	 */
 	color?: Color
+	/**
+	 * Font align (Line spacing options > Line breaks and alignment > Text Alignment)
+	 * Vertical alignment of words on a line is specified with the fontAlgn attribute on the <a:pPr> element for the paragraph. 
+	 * This is relevant when some words on a line are larger than others.
+	 * In such a case, should the smaller words be positioned in the middle relative to the larger words, at the bottom or top?
+	 */
+	fontAlign?: FontAlign
 	/**
 	 * Font face name
 	 * @example 'Arial' // Arial font
