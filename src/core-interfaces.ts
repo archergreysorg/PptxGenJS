@@ -222,7 +222,10 @@ export interface ShapeLineProps extends ShapeFillProps {
 	endArrowType?: 'none' | 'arrow' | 'diamond' | 'oval' | 'stealth' | 'triangle'
 	// FUTURE: beginArrowSize (1-9)
 	// FUTURE: endArrowSize (1-9)
-
+	/**
+	 * Line cap type
+	 */
+	lineCap?: 'flat' | 'round' | 'square'
 	/**
 	 * Dash type
 	 * @deprecated v3.3.0 - use `dashType`

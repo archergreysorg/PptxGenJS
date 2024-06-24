@@ -1,4 +1,4 @@
-// Type definitions for pptxgenjs 3.12.0
+// Type definitions for pptxgenjs 3.13.3
 // Project: https://gitbrent.github.io/PptxGenJS/
 // Definitions by: Brent Ely <https://github.com/gitbrent/>
 //                 Michael Beaumont <https://github.com/michaelbeaumont>
@@ -240,6 +240,7 @@ declare namespace PptxGenJS {
 		'curvedLeftArrow' = 'curvedLeftArrow',
 		'curvedRightArrow' = 'curvedRightArrow',
 		'curvedUpArrow' = 'curvedUpArrow',
+		'custGeom' = 'custGeom',
 		'decagon' = 'decagon',
 		'diagStripe' = 'diagStripe',
 		'diamond' = 'diamond',
@@ -440,6 +441,7 @@ declare namespace PptxGenJS {
 		CURVED_RIGHT_ARROW = 'curvedRightArrow',
 		CURVED_UP_ARROW = 'curvedUpArrow',
 		CURVED_UP_RIBBON = 'ellipseRibbon2',
+		CUSTOM_GEOMETRY = 'custGeom',
 		DECAGON = 'decagon',
 		DIAGONAL_STRIPE = 'diagStripe',
 		DIAMOND = 'diamond',
@@ -676,6 +678,7 @@ declare namespace PptxGenJS {
 		| 'curvedLeftArrow'
 		| 'curvedRightArrow'
 		| 'curvedUpArrow'
+		| 'custGeom'
 		| 'decagon'
 		| 'diagStripe'
 		| 'diamond'
@@ -1051,7 +1054,10 @@ declare namespace PptxGenJS {
 		endArrowType?: 'none' | 'arrow' | 'diamond' | 'oval' | 'stealth' | 'triangle'
 		// FUTURE: beginArrowSize (1-9)
 		// FUTURE: endArrowSize (1-9)
-
+		/**
+		 * Line cap type
+		 */
+		lineCap?: 'flat' | 'round' | 'square'
 		/**
 		 * Dash type
 		 * @deprecated v3.3.0 - use `dashType`
