@@ -420,21 +420,33 @@ export default class PptxGenJS implements IPresentationProps {
 	 * @param {PresSlide | SlideLayout} slide - slide with rels
 	 * @param {JSZip} zip - JSZip instance
 	 * @param {Promise<string>[]} chartPromises - promise array
+	 * @param {Set<string>} writtenMediaTargets - media parts already added to the zip
 	 */
-	private readonly createChartMediaRels = (slide: PresSlide | SlideLayout, zip: JSZip, chartPromises: Array<Promise<string>>): void => {
+	private readonly createChartMediaRels = (
+		slide: PresSlide | SlideLayout,
+		zip: JSZip,
+		chartPromises: Array<Promise<string>>,
+		writtenMediaTargets: Set<string>
+	): void => {
 		slide._relsChart.forEach(rel => chartPromises.push(genCharts.createExcelWorksheet(rel, zip)))
 		slide._relsMedia.forEach(rel => {
 			if (rel.type !== 'online' && rel.type !== 'hyperlink') {
-				// A: Loop vars
+				// A: Skip a part that is already in the zip. Callers that point several rels at one
+				// part to share it would otherwise re-decode the same data and replace the entry.
+				const target = rel.Target.replace('..', 'ppt')
+				if (writtenMediaTargets.has(target)) return
+				writtenMediaTargets.add(target)
+
+				// B: Loop vars
 				let data: string = rel.data && typeof rel.data === 'string' ? rel.data : ''
 
-				// B: Users will undoubtedly pass various string formats, so correct prefixes as needed
+				// C: Users will undoubtedly pass various string formats, so correct prefixes as needed
 				if (!data.includes(',') && !data.includes(';')) data = 'image/png;base64,' + data
 				else if (!data.includes(',')) data = 'image/png;base64,' + data
 				else if (!data.includes(';')) data = 'image/png;' + data
 
-				// C: Add media
-				zip.file(rel.Target.replace('..', 'ppt'), data.split(',').pop(), { base64: true })
+				// D: Add media
+				zip.file(target, data.split(',').pop(), { base64: true })
 			}
 		})
 	}
@@ -539,13 +551,14 @@ export default class PptxGenJS implements IPresentationProps {
 			zip.file('ppt/notesMasters/_rels/notesMaster1.xml.rels', genXml.makeXmlNotesMasterRel())
 
 			// D: Create all Rels (images, media, chart data)
+			const writtenMediaTargets = new Set<string>()
 			this.slideLayouts.forEach(layout => {
-				this.createChartMediaRels(layout, zip, arrChartPromises)
+				this.createChartMediaRels(layout, zip, arrChartPromises, writtenMediaTargets)
 			})
 			this.slides.forEach(slide => {
-				this.createChartMediaRels(slide, zip, arrChartPromises)
+				this.createChartMediaRels(slide, zip, arrChartPromises, writtenMediaTargets)
 			})
-			this.createChartMediaRels(this.masterSlide, zip, arrChartPromises)
+			this.createChartMediaRels(this.masterSlide, zip, arrChartPromises, writtenMediaTargets)
 
 			// E: Wait for Promises (if any) then generate the PPTX file
 			return await Promise.all(arrChartPromises).then(async () => {

@@ -1,4 +1,4 @@
-/* PptxGenJS 3.13.4 @ 2024-06-24T16:05:12.805Z */
+/* PptxGenJS 3.13.4 @ 2026-11-10T16:00:06.691Z */
 'use strict';
 
 var JSZip = require('jszip');
@@ -6818,22 +6818,29 @@ var PptxGenJS = /** @class */ (function () {
          * @param {PresSlide | SlideLayout} slide - slide with rels
          * @param {JSZip} zip - JSZip instance
          * @param {Promise<string>[]} chartPromises - promise array
+         * @param {Set<string>} writtenMediaTargets - media parts already added to the zip
          */
-        this.createChartMediaRels = function (slide, zip, chartPromises) {
+        this.createChartMediaRels = function (slide, zip, chartPromises, writtenMediaTargets) {
             slide._relsChart.forEach(function (rel) { return chartPromises.push(createExcelWorksheet(rel, zip)); });
             slide._relsMedia.forEach(function (rel) {
                 if (rel.type !== 'online' && rel.type !== 'hyperlink') {
-                    // A: Loop vars
+                    // A: Skip a part that is already in the zip. Callers that point several rels at one
+                    // part to share it would otherwise re-decode the same data and replace the entry.
+                    var target = rel.Target.replace('..', 'ppt');
+                    if (writtenMediaTargets.has(target))
+                        return;
+                    writtenMediaTargets.add(target);
+                    // B: Loop vars
                     var data = rel.data && typeof rel.data === 'string' ? rel.data : '';
-                    // B: Users will undoubtedly pass various string formats, so correct prefixes as needed
+                    // C: Users will undoubtedly pass various string formats, so correct prefixes as needed
                     if (!data.includes(',') && !data.includes(';'))
                         data = 'image/png;base64,' + data;
                     else if (!data.includes(','))
                         data = 'image/png;base64,' + data;
                     else if (!data.includes(';'))
                         data = 'image/png;' + data;
-                    // C: Add media
-                    zip.file(rel.Target.replace('..', 'ppt'), data.split(',').pop(), { base64: true });
+                    // D: Add media
+                    zip.file(target, data.split(',').pop(), { base64: true });
                 }
             });
         };
@@ -6893,6 +6900,7 @@ var PptxGenJS = /** @class */ (function () {
                         });
                         arrMediaPromises = arrMediaPromises.concat(encodeSlideMediaRels(this.masterSlide));
                         return [4 /*yield*/, Promise.all(arrMediaPromises).then(function () { return __awaiter(_this, void 0, void 0, function () {
+                                var writtenMediaTargets;
                                 var _this = this;
                                 return __generator(this, function (_a) {
                                     switch (_a.label) {
@@ -6941,14 +6949,14 @@ var PptxGenJS = /** @class */ (function () {
                                             zip.file('ppt/slideMasters/_rels/slideMaster1.xml.rels', makeXmlMasterRel(this.masterSlide, this.slideLayouts));
                                             zip.file('ppt/notesMasters/notesMaster1.xml', makeXmlNotesMaster());
                                             zip.file('ppt/notesMasters/_rels/notesMaster1.xml.rels', makeXmlNotesMasterRel());
-                                            // D: Create all Rels (images, media, chart data)
+                                            writtenMediaTargets = new Set();
                                             this.slideLayouts.forEach(function (layout) {
-                                                _this.createChartMediaRels(layout, zip, arrChartPromises);
+                                                _this.createChartMediaRels(layout, zip, arrChartPromises, writtenMediaTargets);
                                             });
                                             this.slides.forEach(function (slide) {
-                                                _this.createChartMediaRels(slide, zip, arrChartPromises);
+                                                _this.createChartMediaRels(slide, zip, arrChartPromises, writtenMediaTargets);
                                             });
-                                            this.createChartMediaRels(this.masterSlide, zip, arrChartPromises);
+                                            this.createChartMediaRels(this.masterSlide, zip, arrChartPromises, writtenMediaTargets);
                                             return [4 /*yield*/, Promise.all(arrChartPromises).then(function () { return __awaiter(_this, void 0, void 0, function () {
                                                     return __generator(this, function (_a) {
                                                         switch (_a.label) {

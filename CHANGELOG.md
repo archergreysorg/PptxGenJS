@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Notes
 
+## [3.13.5] - 2026-11-10
+
+### Changed
+
+- Media parts are added to the archive once. A caller that points several relationships at one part to share it no longer re-decodes the same data for every placement [[\#3](https://github.com/archergreysorg/PptxGenJS/pull/3)] ([zileeva](https://github.com/zileeva))
+
 ## [3.13.4] - 2024-06-24
 
 ### Added
