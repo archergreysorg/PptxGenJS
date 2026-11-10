@@ -682,6 +682,7 @@ export function addShapeDefinition (target: PresSlide, shapeName: SHAPE_NAME, op
 		dashType: options.line.dashType || 'solid',
 		beginArrowType: options.line.beginArrowType || null,
 		endArrowType: options.line.endArrowType || null,
+		lineCap: options.line.lineCap || 'flat'
 	}
 	if (typeof options.line === 'object' && options.line.type !== 'none') options.line = newLineOpts
 

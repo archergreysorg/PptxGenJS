@@ -1,4 +1,4 @@
-/* PptxGenJS 3.13.2 @ 2023-11-09T15:55:38.800Z */
+/* PptxGenJS 3.13.4 @ 2024-06-24T16:05:12.812Z */
 import JSZip from 'jszip';
 
 /******************************************************************************
@@ -2267,6 +2267,7 @@ function addShapeDefinition(target, shapeName, opts) {
         dashType: options.line.dashType || 'solid',
         beginArrowType: options.line.beginArrowType || null,
         endArrowType: options.line.endArrowType || null,
+        lineCap: options.line.lineCap || 'flat'
     };
     if (typeof options.line === 'object' && options.line.type !== 'none')
         options.line = newLineOpts;
@@ -3749,12 +3750,12 @@ function makeChartType(chartType, data, opts, valAxisId, catAxisId, isMultiTypeC
                         strXml += '<a:ln><a:noFill/></a:ln>';
                     }
                     else {
-                        strXml += "<a:ln w=\"".concat(valToPts(opts.lineSize), "\" cap=\"").concat(createLineCap(opts.lineCap), "\"><a:solidFill>").concat(createColorElement(seriesColor), "</a:solidFill>");
+                        strXml += "<a:ln w=\"".concat(valToPts(opts.lineSize), "\" cap=\"").concat(createLineCap$1(opts.lineCap), "\"><a:solidFill>").concat(createColorElement(seriesColor), "</a:solidFill>");
                         strXml += '<a:prstDash val="' + (opts.lineDash || 'solid') + '"/><a:round/></a:ln>';
                     }
                 }
                 else if (opts.dataBorder) {
-                    strXml += "<a:ln w=\"".concat(valToPts(opts.dataBorder.pt), "\" cap=\"").concat(createLineCap(opts.lineCap), "\"><a:solidFill>").concat(createColorElement(opts.dataBorder.color), "</a:solidFill><a:prstDash val=\"solid\"/><a:round/></a:ln>");
+                    strXml += "<a:ln w=\"".concat(valToPts(opts.dataBorder.pt), "\" cap=\"").concat(createLineCap$1(opts.lineCap), "\"><a:solidFill>").concat(createColorElement(opts.dataBorder.color), "</a:solidFill><a:prstDash val=\"solid\"/><a:round/></a:ln>");
                 }
                 strXml += createShadowElement(opts.shadow, DEF_SHAPE_SHADOW);
                 strXml += '  </c:spPr>';
@@ -3960,7 +3961,7 @@ function makeChartType(chartType, data, opts, valAxisId, catAxisId, isMultiTypeC
                         strXml += '<a:ln><a:noFill/></a:ln>';
                     }
                     else {
-                        strXml += "<a:ln w=\"".concat(valToPts(opts.lineSize), "\" cap=\"").concat(createLineCap(opts.lineCap), "\"><a:solidFill>").concat(createColorElement(tmpSerColor), "</a:solidFill>");
+                        strXml += "<a:ln w=\"".concat(valToPts(opts.lineSize), "\" cap=\"").concat(createLineCap$1(opts.lineCap), "\"><a:solidFill>").concat(createColorElement(tmpSerColor), "</a:solidFill>");
                         strXml += "<a:prstDash val=\"".concat(opts.lineDash || 'solid', "\"/><a:round/></a:ln>");
                     }
                     // Shadow
@@ -4845,7 +4846,7 @@ function createShadowElement(options, defaults) {
 function createGridLineElement(glOpts) {
     var strXml = '<c:majorGridlines>';
     strXml += ' <c:spPr>';
-    strXml += "  <a:ln w=\"".concat(valToPts(glOpts.size || DEF_CHART_GRIDLINE.size), "\" cap=\"").concat(createLineCap(glOpts.cap || DEF_CHART_GRIDLINE.cap), "\">");
+    strXml += "  <a:ln w=\"".concat(valToPts(glOpts.size || DEF_CHART_GRIDLINE.size), "\" cap=\"").concat(createLineCap$1(glOpts.cap || DEF_CHART_GRIDLINE.cap), "\">");
     strXml += '  <a:solidFill><a:srgbClr val="' + (glOpts.color || DEF_CHART_GRIDLINE.color) + '"/></a:solidFill>'; // should accept scheme colors as implemented in [Pull #135]
     strXml += '   <a:prstDash val="' + (glOpts.style || DEF_CHART_GRIDLINE.style) + '"/><a:round/>';
     strXml += '  </a:ln>';
@@ -4853,7 +4854,7 @@ function createGridLineElement(glOpts) {
     strXml += '</c:majorGridlines>';
     return strXml;
 }
-function createLineCap(lineCap) {
+function createLineCap$1(lineCap) {
     if (!lineCap || lineCap === 'flat') {
         return 'flat';
     }
@@ -5466,7 +5467,7 @@ function slideObjectToXml(slide) {
                 strSlideXml += slideItemObj.options.fill ? genXmlColorSelection(slideItemObj.options.fill) : '<a:noFill/>';
                 // shape Type: LINE: line color
                 if (slideItemObj.options.line) {
-                    strSlideXml += slideItemObj.options.line.width ? "<a:ln w=\"".concat(valToPts(slideItemObj.options.line.width), "\">") : '<a:ln>';
+                    strSlideXml += slideItemObj.options.line.width ? "<a:ln w=\"".concat(valToPts(slideItemObj.options.line.width), "\" cap=\"").concat(createLineCap(slideItemObj.options.line.lineCap), "\">") : '<a:ln>';
                     if (slideItemObj.options.line.color)
                         strSlideXml += genXmlColorSelection(slideItemObj.options.line);
                     if (slideItemObj.options.line.dashType)
@@ -6702,6 +6703,22 @@ function makeXmlTableStyles() {
 function makeXmlViewProps() {
     return "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>".concat(CRLF, "<p:viewPr xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\"><p:normalViewPr horzBarState=\"maximized\"><p:restoredLeft sz=\"15611\"/><p:restoredTop sz=\"94610\"/></p:normalViewPr><p:slideViewPr><p:cSldViewPr snapToGrid=\"0\" snapToObjects=\"1\"><p:cViewPr varScale=\"1\"><p:scale><a:sx n=\"136\" d=\"100\"/><a:sy n=\"136\" d=\"100\"/></p:scale><p:origin x=\"216\" y=\"312\"/></p:cViewPr><p:guideLst/></p:cSldViewPr></p:slideViewPr><p:notesTextViewPr><p:cViewPr><p:scale><a:sx n=\"1\" d=\"1\"/><a:sy n=\"1\" d=\"1\"/></p:scale><p:origin x=\"0\" y=\"0\"/></p:cViewPr></p:notesTextViewPr><p:gridSpacing cx=\"76200\" cy=\"76200\"/></p:viewPr>");
 }
+function createLineCap(lineCap) {
+    if (!lineCap || lineCap === 'flat') {
+        return 'flat';
+    }
+    else if (lineCap === 'square') {
+        return 'sq';
+    }
+    else if (lineCap === 'round') {
+        return 'rnd';
+    }
+    else {
+        var neverLineCap = lineCap;
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+        throw new Error("Invalid chart line cap: ".concat(neverLineCap));
+    }
+}
 
 /**
  *  :: pptxgen.ts ::
@@ -6734,7 +6751,7 @@ function makeXmlViewProps() {
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  *  SOFTWARE.
  */
-var VERSION = '3.13.2';
+var VERSION = '3.13.4';
 var PptxGenJS = /** @class */ (function () {
     function PptxGenJS() {
         var _this = this;

@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Notes
 
+## [3.13.4] - 2024-06-24
+
+### Added
+
+- Added selecting round, square or flat line cap for lines [[\#2](https://github.com/archergreysorg/PptxGenJS/pull/2) ([zileeva](https://github.com/zileeva))
+- Added font align options for text [\#1](https://github.com/archergreysorg/PptxGenJS/pull/1) ([zileeva](https://github.com/zileeva))
+
 ## [3.13.0](https://github.com/gitbrent/PptxGenJS/releases/tag/v3.13.0) - 2023-0?-0?
 
 - Added `textDirection` property for text and table cells to allow vertical rotation of text ([gitbrent](https://github.com/gitbrent))

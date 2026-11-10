@@ -506,7 +506,7 @@ function slideObjectToXml (slide: PresSlide | SlideLayout): string {
 
 				// shape Type: LINE: line color
 				if (slideItemObj.options.line) {
-					strSlideXml += slideItemObj.options.line.width ? `<a:ln w="${valToPts(slideItemObj.options.line.width)}">` : '<a:ln>'
+					strSlideXml += slideItemObj.options.line.width ? `<a:ln w="${valToPts(slideItemObj.options.line.width)}" cap="${createLineCap(slideItemObj.options.line.lineCap)}">` : '<a:ln>'
 					if (slideItemObj.options.line.color) strSlideXml += genXmlColorSelection(slideItemObj.options.line)
 					if (slideItemObj.options.line.dashType) strSlideXml += `<a:prstDash val="${slideItemObj.options.line.dashType}"/>`
 					if (slideItemObj.options.line.beginArrowType) strSlideXml += `<a:headEnd type="${slideItemObj.options.line.beginArrowType}"/>`
@@ -1910,5 +1910,19 @@ export function correctShadowOptions (shadowProps: ShadowProps): void {
 
 		// B: ROBUST: Cast any type of valid arg to int: '12', 12.3, etc. -> 12
 		shadowProps.opacity = Number(shadowProps.opacity)
+	}
+}
+
+function createLineCap (lineCap: 'flat' | 'round' | 'square'): string {
+	if (!lineCap || lineCap === 'flat') {
+		return 'flat'
+	} else if (lineCap === 'square') {
+		return 'sq'
+	} else if (lineCap === 'round') {
+		return 'rnd'
+	} else {
+		const neverLineCap: never = lineCap
+		// eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+		throw new Error(`Invalid chart line cap: ${neverLineCap}`)
 	}
 }
