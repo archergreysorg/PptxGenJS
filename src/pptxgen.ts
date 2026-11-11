@@ -484,11 +484,10 @@ export default class PptxGenJS implements IPresentationProps {
 	}
 
 	/**
-	 * Create and export the .pptx file
-	 * @param {WRITE_OUTPUT_TYPE} outputType - output file type
-	 * @return {Promise<string | ArrayBuffer | Blob | Buffer | Uint8Array>} Promise with data or stream (node) or filename (browser)
+	 * Build the .pptx archive in memory
+	 * @return {Promise<JSZip>} Promise with the archive, ready to be generated in any output type
 	 */
-	private readonly exportPresentation = async (props: WriteProps): Promise<string | ArrayBuffer | Blob | Buffer | Uint8Array> => {
+	private readonly buildZip = async (): Promise<JSZip> => {
 		const arrChartPromises: Array<Promise<string>> = []
 		let arrMediaPromises: Array<Promise<string>> = []
 		const zip = new JSZip()
@@ -502,7 +501,7 @@ export default class PptxGenJS implements IPresentationProps {
 		})
 		arrMediaPromises = arrMediaPromises.concat(genMedia.encodeSlideMediaRels(this.masterSlide))
 
-		// STEP 2: Wait for Promises (if any) then generate the PPTX file
+		// STEP 2: Wait for Promises (if any) then build the archive
 		return await Promise.all(arrMediaPromises).then(async () => {
 			// A: Add empty placeholder objects to slides that don't already have them
 			this.slides.forEach(slide => {
@@ -560,20 +559,29 @@ export default class PptxGenJS implements IPresentationProps {
 			})
 			this.createChartMediaRels(this.masterSlide, zip, arrChartPromises, writtenMediaTargets)
 
-			// E: Wait for Promises (if any) then generate the PPTX file
-			return await Promise.all(arrChartPromises).then(async () => {
-				if (props.outputType === 'STREAM') {
-					// A: stream file
-					return await zip.generateAsync({ type: 'nodebuffer', compression: props.compression ? 'DEFLATE' : 'STORE' })
-				} else if (props.outputType) {
-					// B: Node [fs]: Output type user option or default
-					return await zip.generateAsync({ type: props.outputType })
-				} else {
-					// C: Browser: Output blob as app/ms-pptx
-					return await zip.generateAsync({ type: 'blob', compression: props.compression ? 'DEFLATE' : 'STORE' })
-				}
-			})
+			// E: Wait for Promises (if any) then hand back the archive
+			return await Promise.all(arrChartPromises).then(() => zip)
 		})
+	}
+
+	/**
+	 * Create and export the .pptx file
+	 * @param {WRITE_OUTPUT_TYPE} outputType - output file type
+	 * @return {Promise<string | ArrayBuffer | Blob | Buffer | Uint8Array>} Promise with data or stream (node) or filename (browser)
+	 */
+	private readonly exportPresentation = async (props: WriteProps): Promise<string | ArrayBuffer | Blob | Buffer | Uint8Array> => {
+		const zip = await this.buildZip()
+
+		if (props.outputType === 'STREAM') {
+			// A: stream file
+			return await zip.generateAsync({ type: 'nodebuffer', compression: props.compression ? 'DEFLATE' : 'STORE' })
+		} else if (props.outputType) {
+			// B: Node [fs]: Output type user option or default
+			return await zip.generateAsync({ type: props.outputType })
+		} else {
+			// C: Browser: Output blob as app/ms-pptx
+			return await zip.generateAsync({ type: 'blob', compression: props.compression ? 'DEFLATE' : 'STORE' })
+		}
 	}
 
 	// EXPORT METHODS
@@ -587,6 +595,26 @@ export default class PptxGenJS implements IPresentationProps {
 		return await this.exportPresentation({
 			compression: props?.compression,
 			outputType: 'STREAM',
+		})
+	}
+
+	/**
+	 * Export the current Presentation to a Node readable stream
+	 *
+	 * The archive is written out chunk by chunk, so the whole .pptx file is never held in memory.
+	 * `streamFiles` stays off so every entry keeps its size and CRC in its local header, which is
+	 * what PowerPoint reads; only the entry being written is held, not the archive.
+	 *
+	 * @param {WriteBaseProps} props - output properties
+	 * @returns {Promise<NodeJS.ReadableStream>} readable stream of the .pptx file
+	 */
+	async streamNode (props?: WriteBaseProps): Promise<NodeJS.ReadableStream> {
+		const zip = await this.buildZip()
+
+		return zip.generateNodeStream({
+			type: 'nodebuffer',
+			streamFiles: false,
+			compression: props?.compression ? 'DEFLATE' : 'STORE',
 		})
 	}
 
