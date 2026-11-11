@@ -1,4 +1,4 @@
-/* PptxGenJS 3.13.5 @ 2026-11-10T18:58:14.971Z */
+/* PptxGenJS 3.13.6 @ 2026-11-11T21:02:11.982Z */
 'use strict';
 
 var JSZip = require('jszip');
@@ -6878,11 +6878,10 @@ var PptxGenJS = /** @class */ (function () {
             });
         }); };
         /**
-         * Create and export the .pptx file
-         * @param {WRITE_OUTPUT_TYPE} outputType - output file type
-         * @return {Promise<string | ArrayBuffer | Blob | Buffer | Uint8Array>} Promise with data or stream (node) or filename (browser)
+         * Build the .pptx archive in memory
+         * @return {Promise<JSZip>} Promise with the archive, ready to be generated in any output type
          */
-        this.exportPresentation = function (props) { return __awaiter(_this, void 0, void 0, function () {
+        this.buildZip = function () { return __awaiter(_this, void 0, void 0, function () {
             var arrChartPromises, arrMediaPromises, zip;
             var _this = this;
             return __generator(this, function (_a) {
@@ -6957,36 +6956,45 @@ var PptxGenJS = /** @class */ (function () {
                                                 _this.createChartMediaRels(slide, zip, arrChartPromises, writtenMediaTargets);
                                             });
                                             this.createChartMediaRels(this.masterSlide, zip, arrChartPromises, writtenMediaTargets);
-                                            return [4 /*yield*/, Promise.all(arrChartPromises).then(function () { return __awaiter(_this, void 0, void 0, function () {
-                                                    return __generator(this, function (_a) {
-                                                        switch (_a.label) {
-                                                            case 0:
-                                                                if (!(props.outputType === 'STREAM')) return [3 /*break*/, 2];
-                                                                return [4 /*yield*/, zip.generateAsync({ type: 'nodebuffer', compression: props.compression ? 'DEFLATE' : 'STORE' })];
-                                                            case 1: 
-                                                            // A: stream file
-                                                            return [2 /*return*/, _a.sent()];
-                                                            case 2:
-                                                                if (!props.outputType) return [3 /*break*/, 4];
-                                                                return [4 /*yield*/, zip.generateAsync({ type: props.outputType })];
-                                                            case 3: 
-                                                            // B: Node [fs]: Output type user option or default
-                                                            return [2 /*return*/, _a.sent()];
-                                                            case 4: return [4 /*yield*/, zip.generateAsync({ type: 'blob', compression: props.compression ? 'DEFLATE' : 'STORE' })];
-                                                            case 5: 
-                                                            // C: Browser: Output blob as app/ms-pptx
-                                                            return [2 /*return*/, _a.sent()];
-                                                        }
-                                                    });
-                                                }); })];
+                                            return [4 /*yield*/, Promise.all(arrChartPromises).then(function () { return zip; })];
                                         case 1: 
-                                        // E: Wait for Promises (if any) then generate the PPTX file
+                                        // E: Wait for Promises (if any) then hand back the archive
                                         return [2 /*return*/, _a.sent()];
                                     }
                                 });
                             }); })];
                     case 1: 
-                    // STEP 2: Wait for Promises (if any) then generate the PPTX file
+                    // STEP 2: Wait for Promises (if any) then build the archive
+                    return [2 /*return*/, _a.sent()];
+                }
+            });
+        }); };
+        /**
+         * Create and export the .pptx file
+         * @param {WRITE_OUTPUT_TYPE} outputType - output file type
+         * @return {Promise<string | ArrayBuffer | Blob | Buffer | Uint8Array>} Promise with data or stream (node) or filename (browser)
+         */
+        this.exportPresentation = function (props) { return __awaiter(_this, void 0, void 0, function () {
+            var zip;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, this.buildZip()];
+                    case 1:
+                        zip = _a.sent();
+                        if (!(props.outputType === 'STREAM')) return [3 /*break*/, 3];
+                        return [4 /*yield*/, zip.generateAsync({ type: 'nodebuffer', compression: props.compression ? 'DEFLATE' : 'STORE' })];
+                    case 2: 
+                    // A: stream file
+                    return [2 /*return*/, _a.sent()];
+                    case 3:
+                        if (!props.outputType) return [3 /*break*/, 5];
+                        return [4 /*yield*/, zip.generateAsync({ type: props.outputType })];
+                    case 4: 
+                    // B: Node [fs]: Output type user option or default
+                    return [2 /*return*/, _a.sent()];
+                    case 5: return [4 /*yield*/, zip.generateAsync({ type: 'blob', compression: props.compression ? 'DEFLATE' : 'STORE' })];
+                    case 6: 
+                    // C: Browser: Output blob as app/ms-pptx
                     return [2 /*return*/, _a.sent()];
                 }
             });
@@ -7263,6 +7271,33 @@ var PptxGenJS = /** @class */ (function () {
                             outputType: 'STREAM',
                         })];
                     case 1: return [2 /*return*/, _a.sent()];
+                }
+            });
+        });
+    };
+    /**
+     * Export the current Presentation to a Node readable stream
+     *
+     * The archive is written out chunk by chunk, so the whole .pptx file is never held in memory.
+     * `streamFiles` stays off so every entry keeps its size and CRC in its local header, which is
+     * what PowerPoint reads; only the entry being written is held, not the archive.
+     *
+     * @param {WriteBaseProps} props - output properties
+     * @returns {Promise<NodeJS.ReadableStream>} readable stream of the .pptx file
+     */
+    PptxGenJS.prototype.streamNode = function (props) {
+        return __awaiter(this, void 0, void 0, function () {
+            var zip;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, this.buildZip()];
+                    case 1:
+                        zip = _a.sent();
+                        return [2 /*return*/, zip.generateNodeStream({
+                                type: 'nodebuffer',
+                                streamFiles: false,
+                                compression: (props === null || props === void 0 ? void 0 : props.compression) ? 'DEFLATE' : 'STORE',
+                            })];
                 }
             });
         });

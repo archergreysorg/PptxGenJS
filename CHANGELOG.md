@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Notes
 
+## [3.13.6] - 2026-11-11
+
+### Added
+
+- `streamNode()` exports the presentation as a Node readable stream, so the whole .pptx file is never held in memory ([zileeva](https://github.com/zileeva))
+
 ## [3.13.5] - 2026-11-10
 
 ### Changed
