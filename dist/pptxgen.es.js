@@ -1,4 +1,4 @@
-/* PptxGenJS 3.13.6 @ 2026-11-11T21:31:04.092Z */
+/* PptxGenJS 3.13.7 @ 2026-11-12T23:04:28.431Z */
 import JSZip from 'jszip';
 
 /******************************************************************************
@@ -6751,7 +6751,9 @@ function createLineCap(lineCap) {
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  *  SOFTWARE.
  */
-var VERSION = '3.13.4';
+var VERSION = '3.13.7';
+/** Largest size and offset a zip can record without ZIP64, which JSZip does not write. */
+var MAX_ZIP_BYTES = 0xffffffff;
 var PptxGenJS = /** @class */ (function () {
     function PptxGenJS() {
         var _this = this;
@@ -6965,8 +6967,8 @@ var PptxGenJS = /** @class */ (function () {
         }); };
         /**
          * Create and export the .pptx file
-         * @param {WRITE_OUTPUT_TYPE} outputType - output file type
-         * @return {Promise<string | ArrayBuffer | Blob | Buffer | Uint8Array>} Promise with data or stream (node) or filename (browser)
+         * @param {WriteProps} props - output properties
+         * @return {Promise<string | ArrayBuffer | Blob | Buffer | Uint8Array>} Promise with the archive in the requested form
          */
         this.exportPresentation = function (props) { return __awaiter(_this, void 0, void 0, function () {
             var zip;
@@ -7284,20 +7286,35 @@ var PptxGenJS = /** @class */ (function () {
      */
     PptxGenJS.prototype.streamNode = function (props) {
         return __awaiter(this, void 0, void 0, function () {
-            var _a, PassThrough, pipeline, zip, archive;
-            return __generator(this, function (_b) {
-                switch (_b.label) {
+            var nodeStream, PassThrough, Transform, pipeline, zip, archive, bytesWritten, failPastZipLimit;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
                     case 0:
-                        _a = require('stream'), PassThrough = _a.PassThrough, pipeline = _a.pipeline;
+                        nodeStream = typeof require !== 'undefined' && typeof window === 'undefined' ? require('stream') : null // NodeJS
+                        ;
+                        if (!nodeStream)
+                            throw new Error('streamNode() is only available in Node');
+                        PassThrough = nodeStream.PassThrough, Transform = nodeStream.Transform, pipeline = nodeStream.pipeline;
                         return [4 /*yield*/, this.buildZip()];
                     case 1:
-                        zip = _b.sent();
+                        zip = _a.sent();
                         archive = new PassThrough();
+                        bytesWritten = 0;
+                        failPastZipLimit = new Transform({
+                            transform: function (chunk, _encoding, callback) {
+                                bytesWritten += chunk.length;
+                                if (bytesWritten > MAX_ZIP_BYTES) {
+                                    callback(new Error("Presentation is larger than the ".concat(MAX_ZIP_BYTES, " byte zip limit; it would be written without ZIP64 records and could not be opened")));
+                                    return;
+                                }
+                                callback(undefined, chunk);
+                            },
+                        });
                         pipeline(zip.generateNodeStream({
                             type: 'nodebuffer',
                             streamFiles: false,
                             compression: (props === null || props === void 0 ? void 0 : props.compression) ? 'DEFLATE' : 'STORE',
-                        }), archive, function () {
+                        }), failPastZipLimit, archive, function () {
                             // The error reaches the caller on `archive`; there is nothing to do with it here.
                         });
                         return [2 /*return*/, archive];

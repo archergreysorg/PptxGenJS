@@ -99,7 +99,9 @@ import * as genMedia from './gen-media'
 import * as genTable from './gen-tables'
 import * as genXml from './gen-xml'
 
-const VERSION = '3.13.4'
+const VERSION = '3.13.7'
+/** Largest size and offset a zip can record without ZIP64, which JSZip does not write. */
+const MAX_ZIP_BYTES = 0xffffffff
 
 export default class PptxGenJS implements IPresentationProps {
 	// Property getters/setters
@@ -567,8 +569,8 @@ export default class PptxGenJS implements IPresentationProps {
 
 	/**
 	 * Create and export the .pptx file
-	 * @param {WRITE_OUTPUT_TYPE} outputType - output file type
-	 * @return {Promise<string | ArrayBuffer | Blob | Buffer | Uint8Array>} Promise with data or stream (node) or filename (browser)
+	 * @param {WriteProps} props - output properties
+	 * @return {Promise<string | ArrayBuffer | Blob | Buffer | Uint8Array>} Promise with the archive in the requested form
 	 */
 	private readonly exportPresentation = async (props: WriteProps): Promise<string | ArrayBuffer | Blob | Buffer | Uint8Array> => {
 		const zip = await this.buildZip()
@@ -613,13 +615,33 @@ export default class PptxGenJS implements IPresentationProps {
 	 * @returns {Promise<Readable>} readable stream of the .pptx file
 	 */
 	async streamNode (props?: WriteBaseProps): Promise<Readable> {
+		// Checked before buildZip, which is where all the time and memory go: a browser bundle maps
+		// `stream` to false, and without this the failure arrives much later as "PassThrough is not
+		// a constructor". The guard matches the one writeFile uses for `fs`.
+		const nodeStream = typeof require !== 'undefined' && typeof window === 'undefined' ? require('stream') : null // NodeJS
+		if (!nodeStream) throw new Error('streamNode() is only available in Node')
+
 		// JSZip builds its node stream on readable-stream 2, which is not an instanceof node's
 		// stream.Readable and carries no async iterator, so consumers such as the AWS SDK reject it.
 		// pipeline re-emits it as a native stream and, unlike pipe, destroys that stream with the
 		// error when the archive fails, so the caller sees the failure instead of waiting forever.
-		const { PassThrough, pipeline } = require('stream')
+		const { PassThrough, Transform, pipeline } = nodeStream
 		const zip = await this.buildZip()
 		const archive = new PassThrough()
+
+		// JSZip writes 32-bit sizes and offsets and no ZIP64 records, so an archive past 4 GiB
+		// completes without error and opens as a corrupt file. Stop at the limit instead.
+		let bytesWritten = 0
+		const failPastZipLimit = new Transform({
+			transform (chunk: Buffer, _encoding: string, callback: (error?: Error, chunk?: Buffer) => void) {
+				bytesWritten += chunk.length
+				if (bytesWritten > MAX_ZIP_BYTES) {
+					callback(new Error(`Presentation is larger than the ${MAX_ZIP_BYTES} byte zip limit; it would be written without ZIP64 records and could not be opened`))
+					return
+				}
+				callback(undefined, chunk)
+			},
+		})
 
 		pipeline(
 			zip.generateNodeStream({
@@ -627,6 +649,7 @@ export default class PptxGenJS implements IPresentationProps {
 				streamFiles: false,
 				compression: props?.compression ? 'DEFLATE' : 'STORE',
 			}),
+			failPastZipLimit,
 			archive,
 			() => {
 				// The error reaches the caller on `archive`; there is nothing to do with it here.
