@@ -60,6 +60,7 @@
  */
 
 import JSZip from 'jszip'
+import type { Readable } from 'stream'
 import Slide from './slide'
 import {
 	AlignH,
@@ -601,21 +602,38 @@ export default class PptxGenJS implements IPresentationProps {
 	/**
 	 * Export the current Presentation to a Node readable stream
 	 *
-	 * The archive is written out chunk by chunk, so the whole .pptx file is never held in memory.
+	 * The archive is emitted chunk by chunk rather than collected and concatenated, so the finished
+	 * file is never held in memory. The presentation's media still is, and each entry is buffered
+	 * while it is written: the saving over `stream()` is about twice the size of the output.
+	 *
 	 * `streamFiles` stays off so every entry keeps its size and CRC in its local header, which is
-	 * what PowerPoint reads; only the entry being written is held, not the archive.
+	 * what PowerPoint reads.
 	 *
 	 * @param {WriteBaseProps} props - output properties
-	 * @returns {Promise<NodeJS.ReadableStream>} readable stream of the .pptx file
+	 * @returns {Promise<Readable>} readable stream of the .pptx file
 	 */
-	async streamNode (props?: WriteBaseProps): Promise<NodeJS.ReadableStream> {
+	async streamNode (props?: WriteBaseProps): Promise<Readable> {
+		// JSZip builds its node stream on readable-stream 2, which is not an instanceof node's
+		// stream.Readable and carries no async iterator, so consumers such as the AWS SDK reject it.
+		// pipeline re-emits it as a native stream and, unlike pipe, destroys that stream with the
+		// error when the archive fails, so the caller sees the failure instead of waiting forever.
+		const { PassThrough, pipeline } = require('stream')
 		const zip = await this.buildZip()
+		const archive = new PassThrough()
 
-		return zip.generateNodeStream({
-			type: 'nodebuffer',
-			streamFiles: false,
-			compression: props?.compression ? 'DEFLATE' : 'STORE',
-		})
+		pipeline(
+			zip.generateNodeStream({
+				type: 'nodebuffer',
+				streamFiles: false,
+				compression: props?.compression ? 'DEFLATE' : 'STORE',
+			}),
+			archive,
+			() => {
+				// The error reaches the caller on `archive`; there is nothing to do with it here.
+			}
+		)
+
+		return archive
 	}
 
 	/**

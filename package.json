@@ -29,6 +29,7 @@
     "https": false,
     "image-size": false,
     "os": false,
+    "stream": false,
     "path": false
   },
   "dependencies": {

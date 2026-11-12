@@ -1,4 +1,4 @@
-/* PptxGenJS 3.13.6 @ 2026-11-11T21:02:11.982Z */
+/* PptxGenJS 3.13.6 @ 2026-11-11T21:31:04.089Z */
 'use strict';
 
 var JSZip = require('jszip');
@@ -7278,26 +7278,35 @@ var PptxGenJS = /** @class */ (function () {
     /**
      * Export the current Presentation to a Node readable stream
      *
-     * The archive is written out chunk by chunk, so the whole .pptx file is never held in memory.
+     * The archive is emitted chunk by chunk rather than collected and concatenated, so the finished
+     * file is never held in memory. The presentation's media still is, and each entry is buffered
+     * while it is written: the saving over `stream()` is about twice the size of the output.
+     *
      * `streamFiles` stays off so every entry keeps its size and CRC in its local header, which is
-     * what PowerPoint reads; only the entry being written is held, not the archive.
+     * what PowerPoint reads.
      *
      * @param {WriteBaseProps} props - output properties
-     * @returns {Promise<NodeJS.ReadableStream>} readable stream of the .pptx file
+     * @returns {Promise<Readable>} readable stream of the .pptx file
      */
     PptxGenJS.prototype.streamNode = function (props) {
         return __awaiter(this, void 0, void 0, function () {
-            var zip;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4 /*yield*/, this.buildZip()];
+            var _a, PassThrough, pipeline, zip, archive;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0:
+                        _a = require('stream'), PassThrough = _a.PassThrough, pipeline = _a.pipeline;
+                        return [4 /*yield*/, this.buildZip()];
                     case 1:
-                        zip = _a.sent();
-                        return [2 /*return*/, zip.generateNodeStream({
-                                type: 'nodebuffer',
-                                streamFiles: false,
-                                compression: (props === null || props === void 0 ? void 0 : props.compression) ? 'DEFLATE' : 'STORE',
-                            })];
+                        zip = _b.sent();
+                        archive = new PassThrough();
+                        pipeline(zip.generateNodeStream({
+                            type: 'nodebuffer',
+                            streamFiles: false,
+                            compression: (props === null || props === void 0 ? void 0 : props.compression) ? 'DEFLATE' : 'STORE',
+                        }), archive, function () {
+                            // The error reaches the caller on `archive`; there is nothing to do with it here.
+                        });
+                        return [2 /*return*/, archive];
                 }
             });
         });
