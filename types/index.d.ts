@@ -92,6 +92,12 @@ declare class PptxGenJS {
 	 */
 	stream(props?: PptxGenJS.WriteBaseProps): Promise<string | ArrayBuffer | Blob | Uint8Array>
 	/**
+	 * Export the current Presentation to a Node readable stream
+	 * @param {WriteBaseProps} props output properties
+	 * @returns {Promise<Readable>} readable stream of the .pptx file
+	 */
+	streamNode(props?: PptxGenJS.WriteBaseProps): Promise<import('stream').Readable>
+	/**
 	 * Export the current Presentation as JSZip content with the selected type
 	 * @param {WriteProps} props output properties
 	 * @returns {Promise<string | ArrayBuffer | Blob | Uint8Array>} file content in selected type

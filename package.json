@@ -1,6 +1,6 @@
 {
   "name": "@contrail/pptxgenjs",
-  "version": "3.13.5",
+  "version": "3.13.7",
   "author": {
     "name": "Brent Ely",
     "url": "https://github.com/gitbrent/"
@@ -29,6 +29,7 @@
     "https": false,
     "image-size": false,
     "os": false,
+    "stream": false,
     "path": false
   },
   "dependencies": {
