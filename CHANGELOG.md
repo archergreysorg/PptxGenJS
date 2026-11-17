@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Notes
 
+## [3.13.7] - 2026-11-17
+
+### Fixed
+
+- `streamNode()` fails with an error once the archive passes 4 GiB. JSZip writes no ZIP64 records and coerces sizes and offsets to uint32, so a larger presentation streamed to completion and opened as a corrupt file ([zileeva](https://github.com/zileeva))
+- `streamNode()` throws `streamNode() is only available in Node` up front, instead of failing at `new PassThrough()` once the archive has already been built. The same change drops the bare `require('stream')` from `dist/pptxgen.es.js`, which broke esbuild ESM bundles ([zileeva](https://github.com/zileeva))
+- `VERSION` reports the released version. It had said `3.13.4` since that release, so `pptx.version` misreported every version after it ([zileeva](https://github.com/zileeva))
+- The JSDoc on `exportPresentation()` no longer documents an `outputType` param and a stream return that it does not have ([zileeva](https://github.com/zileeva))
+
 ## [3.13.6] - 2026-11-11
 
 ### Added
